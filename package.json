@@ -1,0 +1,14 @@
+{
+  "name": "nfc-contact",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Landing NFC de MonitorOne con descarga de contacto",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "test:e2e": "node test/e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.1"
+  }
+}
