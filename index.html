@@ -1,75 +1,126 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cristóbal Jofré F. · MonitorOne</title>
-  <meta name="description" content="Tarjeta de contacto de Cristóbal Jofré F., Gerente General de MonitorOne. Real Time Growth Management.">
+  <title>Cristóbal Jofré · MonitorOne</title>
+  <script>
+  (function () {
+    var D = {"es":"es/","en":"","pt":"pt/","fr":"fr/","zh":"zh/"};
+    var ok = function (c) { return Object.prototype.hasOwnProperty.call(D, c); };
+    var l = (new URLSearchParams(location.search).get('lang') || '').toLowerCase().slice(0, 2);
+    if (ok(l)) { try { localStorage.setItem('lang', l); } catch (e) { /* sin almacenamiento */ } }
+    else { l = ''; try { l = localStorage.getItem('lang') || ''; } catch (e) { /* sin almacenamiento */ } }
+    if (!ok(l)) {
+      l = 'en';
+      var L = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+      for (var i = 0; i < L.length; i++) { var c = String(L[i]).toLowerCase().slice(0, 2); if (ok(c)) { l = c; break; } }
+    }
+    if (D[l]) location.replace(D[l]);
+  })();
+  </script>
+  <meta name="description" content="Contact card of Cristóbal Jofré, General Manager of MonitorOne. Real Time Growth Management.">
   <meta name="theme-color" content="#01253F">
+  <meta name="color-scheme" content="dark">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="alternate" hreflang="es" href="https://cjofref.github.io/contacto/es/">
+  <link rel="alternate" hreflang="pt-BR" href="https://cjofref.github.io/contacto/pt/">
+  <link rel="alternate" hreflang="fr" href="https://cjofref.github.io/contacto/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://cjofref.github.io/contacto/zh/">
+  <link rel="alternate" hreflang="x-default" href="https://cjofref.github.io/contacto/">
   <meta property="og:type" content="website">
-  <meta property="og:locale" content="es_CL">
-  <meta property="og:title" content="Cristóbal Jofré F. · MonitorOne">
-  <meta property="og:description" content="Gerente General de MonitorOne. Guarda mi contacto y conoce Real Time Growth Management.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Cristóbal Jofré · MonitorOne">
+  <meta property="og:description" content="General Manager of MonitorOne. Save my contact and discover Real Time Growth Management.">
   <meta property="og:url" content="https://cjofref.github.io/contacto/">
   <meta property="og:image" content="https://cjofref.github.io/contacto/assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Poppins:wght@600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@600;700;800&display=swap">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <header class="site-header">
-    <img src="assets/logo-m1-wh.png" width="1200" height="286" alt="Monitor One">
-  </header>
+<div class="card-page">
+  <div class="nodes" aria-hidden="true"></div>
+  <div class="arc arc-tl" aria-hidden="true"></div>
 
-  <main>
-    <section class="card person" aria-labelledby="nombre">
-      <h1 id="nombre">Cristóbal Jofré F.</h1>
-      <p class="role">Gerente General</p>
-      <p class="company">MonitorOne</p>
-      <a class="btn btn-primary" href="contacto.vcf" download>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
-        Guardar contacto
-      </a>
-      <ul class="actions">
-        <li><a class="btn btn-outline" href="tel:+56931929011">Llamar</a></li>
-        <li><a class="btn btn-outline" href="https://wa.me/56931929011">WhatsApp</a></li>
-        <li><a class="btn btn-outline" href="mailto:cjofre@monitorone.com">Email</a></li>
-        <li><a class="btn btn-outline" href="https://www.linkedin.com/in/cristobaljofre">LinkedIn</a></li>
-      </ul>
-    </section>
+  <div class="gutter">
+    <nav class="langbar">
+      <details class="lang">
+        <summary aria-label="Language: English"><span class="fl" aria-hidden="true">🇺🇸</span><svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <ul class="menu">
+          <li><a href="es/" hreflang="es" lang="es" data-lang="es"><span class="fl" aria-hidden="true">🇨🇱</span><span>Español</span></a></li>
+          <li><a href="./?lang=en" hreflang="en" lang="en" data-lang="en" aria-current="true"><span class="fl" aria-hidden="true">🇺🇸</span><span>English</span></a></li>
+          <li><a href="pt/" hreflang="pt-BR" lang="pt-BR" data-lang="pt"><span class="fl" aria-hidden="true">🇧🇷</span><span>Português</span></a></li>
+          <li><a href="fr/" hreflang="fr" lang="fr" data-lang="fr"><span class="fl" aria-hidden="true">🇫🇷</span><span>Français</span></a></li>
+          <li><a href="zh/" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh"><span class="fl" aria-hidden="true">🇨🇳</span><span>中文</span></a></li>
+        </ul>
+      </details>
+    </nav>
 
-    <section class="card about" aria-labelledby="producto">
-      <h2 id="producto">MonitorOne</h2>
-      <p class="tagline">Real Time Growth Management</p>
-      <p class="pitch">Plataforma de monitoreo para producción avícola y porcina. Reúne en una sola vista el pesaje, el alimento y el ambiente de tus galpones.</p>
-      <ul class="modules">
-        <li>
-          <h3>Pesaje de aves</h3>
-          <p>Peso y crecimiento de tus crianzas con datos de balanza.</p>
-        </li>
-        <li>
-          <h3>Alimento y silos</h3>
-          <p>Nivel de silos, cargas y consumo diario.</p>
-        </li>
-        <li>
-          <h3>Alertas</h3>
-          <p>Avisos cuando un indicador se sale de lo esperado.</p>
-        </li>
-        <li>
-          <h3>Sensores y mapas de calor</h3>
-          <p>Estado de los sensores y variables del galpón por hora del día.</p>
-        </li>
-      </ul>
-      <a class="btn btn-outline web" href="https://www.monitorone.com">Conoce MonitorOne</a>
-    </section>
-  </main>
+    <header class="top">
+      <img src="assets/logo-m1-wh.png" width="1200" height="286" alt="Monitor One by Maximus">
+    </header>
 
-  <footer class="site-footer">
-    <img src="assets/m1-monogram.png" width="266" height="266" alt="">
-    <p>MonitorOne · Santiago, Chile</p>
-  </footer>
+    <main>
+      <section class="hero" aria-labelledby="nombre">
+        <p class="kicker" lang="en"><span class="chev" aria-hidden="true">&raquo;</span>Turn data into direction</p>
+        <h1 class="hl" id="nombre">Cristóbal Jofré</h1>
+        <p class="role">General Manager</p>
+      </section>
+
+      <section class="person" aria-label="Contact">
+        <a class="btn btn-primary" href="contacto.vcf" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          <span>Save contact</span>
+        </a>
+        <a class="btn btn-wa" href="https://wa.me/56931929011?text=Hi%20Cristobal%2C%20just%20scanned%20your%20card" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l1.6-4.6A8.5 8.5 0 1112 20.5a8.4 8.4 0 01-4-1z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-.8.8a4 4 0 01-1.5-1.5l.8-.8-1-2z" fill="currentColor" stroke="none"/></svg>
+          WhatsApp
+        </a>
+        <ul class="circles">
+          <li><a class="circle" href="tel:+56931929011" aria-label="Call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg></a></li>
+          <li><a class="circle" href="mailto:cjofre@monitorone.com" aria-label="Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></a></li>
+          <li><a class="circle" href="https://www.linkedin.com/in/cristobaljofre" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.5 8.6A1.9 1.9 0 106.5 4.8a1.9 1.9 0 000 3.8zM4.9 10h3.2v9.1H4.9zM10 10h3v1.3c.5-.9 1.6-1.6 3.1-1.6 3 0 3.6 2 3.6 4.5v4.9h-3.2v-4.4c0-1.1 0-2.4-1.5-2.4s-1.7 1.1-1.7 2.3v4.5H10z"/></svg></a></li>
+        </ul>
+      </section>
+
+      <section class="about" aria-labelledby="producto">
+        <p class="eyebrow">Platform</p>
+        <h2 id="producto">Monitor One</h2>
+        <p class="pitch">Monitoring for poultry and swine production. See weighing, feed and barn environment in a single view.</p>
+        <ul class="modules">
+          <li><span class="mod-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 20V10m5 10V4m5 16v-7"/></svg></span><div><h3>Poultry weighing</h3><p>Weight and growth of your flocks from scale data.</p></div></li>
+          <li><span class="mod-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v6l-2 2v10H9V11L7 9z"/></svg></span><div><h3>Feed and silos</h3><p>Silo levels, deliveries and daily consumption.</p></div></li>
+          <li><span class="mod-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 0112 0v6l2 2H4zM10 21a2 2 0 004 0"/></svg></span><div><h3>Alerts</h3><p>Notifications when an indicator moves outside the expected range.</p></div></li>
+          <li><span class="mod-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 000 12.8M18.4 5.6a9 9 0 010 12.8"/></svg></span><div><h3>Sensors and heat maps</h3><p>Sensor status and barn variables by hour of the day.</p></div></li>
+        </ul>
+      </section>
+
+      <section class="demo" aria-label="Demo">
+        <p>Take your farm's data to the next level</p>
+        <a class="btn" href="https://webforms.pipedrive.com/f/6UOYm0kTDVL0YsV8SFnOzsSKA5bwGdbyJkvX5kAbAUHXz0dJSshwb9aM14NiE6BILF" target="_blank" rel="noopener">Request a demo</a>
+      </section>
+    </main>
+
+    <footer>
+      <img src="assets/m1-monogram.png" width="266" height="266" alt="">
+      <p class="t" lang="en">Real Time Growth Management</p>
+      <p>MonitorOne · Santiago, Chile</p>
+    </footer>
+  </div>
+
+  <div class="nodes nodes-foot" aria-hidden="true"></div>
+  <div class="arc arc-br" aria-hidden="true"></div>
+</div>
+<script>
+/* Recuerda el idioma elegido en el selector; la raíz lo respeta al volver. */
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[data-lang]');
+  if (!a) return;
+  try { localStorage.setItem('lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
+});
+</script>
 </body>
 </html>
