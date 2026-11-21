@@ -4,9 +4,8 @@
   --mo-teal: #10C1C5;
   --mo-mint: #87C78D;
   --mo-dark-gray: #383838;
-  --mo-gradient: linear-gradient(135deg, #10C1C5, #87C78D);
+  --mo-gradient: linear-gradient(135deg, var(--mo-teal), var(--mo-mint));
   --mo-bg: #f8f9fa;
-  --mo-border: #dee2e6;
   --mo-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
   --mo-font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
   --mo-font-body: 'Lato', system-ui, -apple-system, sans-serif;
@@ -27,6 +26,7 @@ body {
 
 h1, h2, h3 {
   font-family: var(--mo-font-heading);
+  font-weight: 600;
   color: var(--mo-navy);
   line-height: 1.25;
   margin: 0;
@@ -110,15 +110,17 @@ main {
   box-shadow: var(--mo-shadow-sm);
 }
 
-.btn-primary:hover { background: var(--mo-gradient); }
-
 .btn-outline {
   background: #fff;
   color: var(--mo-navy);
   border: 2px solid var(--mo-navy);
 }
 
-.btn-outline:hover { background: var(--mo-navy); color: #fff; }
+/* Solo en dispositivos con puntero: en pantallas táctiles el hover queda pegado tras el toque. */
+@media (hover: hover) {
+  .btn-primary:hover { background: var(--mo-gradient); }
+  .btn-outline:hover { background: var(--mo-navy); color: #fff; }
+}
 
 .actions {
   list-style: none;
