@@ -60,7 +60,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
           <span>Enregistrer le contact</span>
         </a>
-        <a class="btn btn-wa" href="https://wa.me/56931929011?text=Bonjour%20Crist%C3%B3bal%2C%20j'ai%20scann%C3%A9%20votre%20carte%20%2F%20Hi%20Cristobal%2C%20just%20scanned%20your%20card" target="_blank" rel="noopener">
+        <a class="btn btn-wa" href="https://wa.me/56931929011?text=Bonjour%20Crist%C3%B3bal%2C%20j'ai%20scann%C3%A9%20votre%20carte%20%2F%20Hola%20Crist%C3%B3bal%2C%20escane%C3%A9%20tu%20tarjeta" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l1.6-4.6A8.5 8.5 0 1112 20.5a8.4 8.4 0 01-4-1z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-.8.8a4 4 0 01-1.5-1.5l.8-.8-1-2z" fill="currentColor" stroke="none"/></svg>
           WhatsApp
         </a>
@@ -68,7 +68,9 @@
           <li><a class="circle" href="tel:+56931929011" aria-label="Appeler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg></a></li>
           <li><a class="circle" href="mailto:cjofre@monitorone.com" aria-label="E-mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></a></li>
           <li><a class="circle" href="https://www.linkedin.com/in/cristobaljofre" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.5 8.6A1.9 1.9 0 106.5 4.8a1.9 1.9 0 000 3.8zM4.9 10h3.2v9.1H4.9zM10 10h3v1.3c.5-.9 1.6-1.6 3.1-1.6 3 0 3.6 2 3.6 4.5v4.9h-3.2v-4.4c0-1.1 0-2.4-1.5-2.4s-1.7 1.1-1.7 2.3v4.5H10z"/></svg></a></li>
+          <li><a class="circle" href="weixin://" data-wechat aria-label="WeChat, ID cjofre13"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 4C5.4 4 2 6.7 2 10.2c0 2 1.1 3.7 2.8 4.8L4 18l3.1-1.6c.8.2 1.6.3 2.4.3"/><path d="M22 14.5c0-2.8-2.7-5-6-5s-6 2.2-6 5 2.7 5 6 5c.7 0 1.4-.1 2-.3l3 .8-.9-2.6c1.1-.9 1.9-2 1.9-2.9z"/></svg></a></li>
         </ul>
+        <p class="wechat-status" id="wechat-status" role="status" data-id="cjofre13" data-copied="ID WeChat copié : cjofre13" data-manual="ID WeChat : cjofre13" data-open="Ouvrir WeChat" data-close="Fermer l'avis"></p>
       </section>
 
       <section class="about" aria-labelledby="producto">
@@ -105,6 +107,36 @@ document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a[data-lang]');
   if (!a) return;
   try { localStorage.setItem('contacto.lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
+});
+/* WeChat: copia el ID y abre la app. Si no puede copiar, no navega y deja el aviso con «Abrir WeChat».
+   Sin JavaScript el enlace weixin:// abre WeChat igual. */
+document.addEventListener('click', function (e) {
+  var w = e.target.closest && e.target.closest('a[data-wechat]');
+  var s = document.getElementById('wechat-status');
+  if (!w || !s) return;
+  e.preventDefault();
+  var id = s.getAttribute('data-id');
+  var limpia = function () { while (s.firstChild) s.removeChild(s.firstChild); };
+  var aviso = function (conEnlace) {
+    limpia();
+    s.appendChild(document.createTextNode(s.getAttribute(conEnlace ? 'data-manual' : 'data-copied')));
+    if (!conEnlace) return;
+    var o = document.createElement('a');
+    o.href = w.href;
+    o.className = 'wechat-open';
+    o.textContent = s.getAttribute('data-open');
+    o.addEventListener('click', limpia);
+    var c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'wechat-close';
+    c.setAttribute('aria-label', s.getAttribute('data-close'));
+    c.textContent = '\u00d7';
+    c.addEventListener('click', limpia);
+    s.appendChild(o);
+    s.appendChild(c);
+  };
+  var copia = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(id) : Promise.reject();
+  copia.then(function () { aviso(false); location.href = w.href; }, function () { aviso(true); });
 });
 </script>
 </body>

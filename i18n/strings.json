@@ -1,5 +1,6 @@
 {
   "site": "https://cjofref.github.io/contacto/",
+  "wechatId": "cjofre13",
   "locales": {
     "es": {
       "code": "es",
@@ -18,7 +19,7 @@
       "save": "Guardar contacto",
       "call": "Llamar",
       "mail": "Email",
-      "wa": "Hola Cristóbal, escaneé tu tarjeta / Hi Cristobal, just scanned your card",
+      "wa": "Hola Cristóbal, escaneé tu tarjeta",
       "eyebrow": "Plataforma",
       "pitch": "Monitoreo para producción avícola y porcina. Reúne en una sola vista el pesaje, el alimento y el ambiente de tus galpones.",
       "m1t": "Pesaje de aves",
@@ -32,7 +33,13 @@
       "demoLabel": "Demo",
       "demoP": "Lleva los datos de tu granja al siguiente nivel",
       "demoB": "Solicita tu demo",
-      "loc": "MonitorOne · Santiago, Chile"
+      "loc": "MonitorOne · Santiago, Chile",
+      "wechat": "WeChat",
+      "wechatCopied": "ID de WeChat copiado: {id}",
+      "wechatOpen": "Abrir WeChat",
+      "wechatAria": "WeChat, ID {id}",
+      "wechatClose": "Cerrar aviso",
+      "wechatManual": "ID de WeChat: {id}"
     },
     "en": {
       "code": "en",
@@ -51,7 +58,7 @@
       "save": "Save contact",
       "call": "Call",
       "mail": "Email",
-      "wa": "Hi Cristobal, just scanned your card",
+      "wa": "Hi Cristobal, just scanned your card / Hola Cristóbal, escaneé tu tarjeta",
       "eyebrow": "Platform",
       "pitch": "Monitoring for poultry and swine production. See weighing, feed and barn environment in a single view.",
       "m1t": "Poultry weighing",
@@ -65,7 +72,13 @@
       "demoLabel": "Demo",
       "demoP": "Take your farm's data to the next level",
       "demoB": "Request a demo",
-      "loc": "MonitorOne · Santiago, Chile"
+      "loc": "MonitorOne · Santiago, Chile",
+      "wechat": "WeChat",
+      "wechatCopied": "WeChat ID copied: {id}",
+      "wechatOpen": "Open WeChat",
+      "wechatAria": "WeChat, ID {id}",
+      "wechatClose": "Dismiss",
+      "wechatManual": "WeChat ID: {id}"
     },
     "pt-BR": {
       "code": "pt",
@@ -84,7 +97,7 @@
       "save": "Salvar contato",
       "call": "Ligar",
       "mail": "E-mail",
-      "wa": "Olá Cristóbal, escaneei seu cartão / Hi Cristobal, just scanned your card",
+      "wa": "Olá Cristóbal, escaneei seu cartão / Hola Cristóbal, escaneé tu tarjeta",
       "eyebrow": "Plataforma",
       "pitch": "Monitoramento para produção avícola e suína. Reúna em uma única visão a pesagem, a ração e o ambiente dos seus galpões.",
       "m1t": "Pesagem de aves",
@@ -98,7 +111,13 @@
       "demoLabel": "Demonstração",
       "demoP": "Leve os dados da sua granja para o próximo nível",
       "demoB": "Solicite uma demonstração",
-      "loc": "MonitorOne · Santiago, Chile"
+      "loc": "MonitorOne · Santiago, Chile",
+      "wechat": "WeChat",
+      "wechatCopied": "ID do WeChat copiado: {id}",
+      "wechatOpen": "Abrir o WeChat",
+      "wechatAria": "WeChat, ID {id}",
+      "wechatClose": "Fechar aviso",
+      "wechatManual": "ID do WeChat: {id}"
     },
     "fr": {
       "code": "fr",
@@ -117,7 +136,7 @@
       "save": "Enregistrer le contact",
       "call": "Appeler",
       "mail": "E-mail",
-      "wa": "Bonjour Cristóbal, j'ai scanné votre carte / Hi Cristobal, just scanned your card",
+      "wa": "Bonjour Cristóbal, j'ai scanné votre carte / Hola Cristóbal, escaneé tu tarjeta",
       "eyebrow": "Plateforme",
       "pitch": "Suivi de la production avicole et porcine. Réunissez en une seule vue la pesée, l'alimentation et l'ambiance de vos bâtiments.",
       "m1t": "Pesée des volailles",
@@ -131,7 +150,13 @@
       "demoLabel": "Démo",
       "demoP": "Passez les données de votre élevage au niveau supérieur",
       "demoB": "Demandez une démo",
-      "loc": "MonitorOne · Santiago, Chili"
+      "loc": "MonitorOne · Santiago, Chili",
+      "wechat": "WeChat",
+      "wechatCopied": "ID WeChat copié : {id}",
+      "wechatOpen": "Ouvrir WeChat",
+      "wechatAria": "WeChat, ID {id}",
+      "wechatClose": "Fermer l'avis",
+      "wechatManual": "ID WeChat : {id}"
     },
     "zh-Hans": {
       "code": "zh",
@@ -150,7 +175,7 @@
       "save": "保存联系人",
       "call": "拨打电话",
       "mail": "电子邮件",
-      "wa": "你好 Cristóbal，我扫描了你的名片 / Hi Cristobal, just scanned your card",
+      "wa": "你好 Cristóbal，我扫描了你的名片 / Hola Cristóbal, escaneé tu tarjeta",
       "eyebrow": "平台",
       "pitch": "面向禽类和猪只养殖的监测平台。在一个界面中查看称重、饲料和圈舍环境。",
       "m1t": "禽只称重",
@@ -164,7 +189,14 @@
       "demoLabel": "演示",
       "demoP": "让您的养殖数据更上一层楼",
       "demoB": "申请演示",
-      "loc": "MonitorOne · 智利圣地亚哥"
+      "loc": "MonitorOne · 智利圣地亚哥",
+      "wechat": "微信",
+      "wechatCopied": "已复制微信号：{id}",
+      "wechatOpen": "打开微信",
+      "wechatAria": "微信，微信号 {id}",
+      "wechatClose": "关闭提示",
+      "wechatWide": true,
+      "wechatManual": "微信号：{id}"
     }
   }
 }

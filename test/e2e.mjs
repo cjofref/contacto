@@ -14,7 +14,7 @@ if (process.env.NODE_TEST_CONTEXT) {
 const BASE_URL = new URL(process.env.BASE_URL || 'http://localhost:8000/');
 const ARTIFACTS = new URL('./artifacts/', import.meta.url).pathname;
 const VCF_LOCAL = readFileSync(new URL('../contacto.vcf', import.meta.url));
-const { locales } = JSON.parse(readFileSync(new URL('../i18n/strings.json', import.meta.url), 'utf8'));
+const { wechatId, locales } = JSON.parse(readFileSync(new URL('../i18n/strings.json', import.meta.url), 'utf8'));
 const PAGINAS = Object.values(locales);
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 const urlDe = (dir) => new URL(dir, BASE_URL).href;
@@ -123,6 +123,50 @@ async function recuerdo(browser) {
   await ctx.close();
 }
 
+// R-13: al tocar WeChat se copia el ID y se intenta abrir weixin://; si no se puede copiar, no se navega.
+// La navegación a weixin:// se observa como request; la prueba no depende de que se abra la app.
+async function wechat(browser, p) {
+  const etiqueta = `${p.dir || '/'} wechat`;
+  const abre = async (copiaFalla) => {
+    const ctx = await nuevoContexto(browser);
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL.origin });
+    if (copiaFalla) await ctx.addInitScript(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denegado')); });
+    const page = await ctx.newPage();
+    const pedidos = [];
+    page.on('request', (r) => { if (r.url().startsWith('weixin:')) pedidos.push(r.url()); });
+    await page.goto(p.dir ? urlDe(p.dir) : urlDe('?lang=en'), { waitUntil: 'load' });
+    check((await page.locator('#wechat-status').innerText()) === '', `[${etiqueta}] el aviso empieza vacío`);
+    await page.locator('a[data-wechat]').tap();
+    await page.waitForTimeout(400);
+    return { ctx, page, pedidos };
+  };
+
+  const ok = await abre(false);
+  check((await ok.page.evaluate(() => navigator.clipboard.readText())) === wechatId, `[${etiqueta}] copia ${wechatId}`);
+  check((await ok.page.locator('#wechat-status').innerText()) === p.wechatCopied.replace('{id}', wechatId), `[${etiqueta}] aviso del idioma tras copiar`);
+  check(ok.pedidos.length === 1, `[${etiqueta}] intenta abrir weixin:// (${ok.pedidos.length})`);
+  await ok.ctx.close();
+
+  const mal = await abre(true);
+  const estado = mal.page.locator('#wechat-status');
+  check(mal.pedidos.length === 0, `[${etiqueta}] si no copia, se cancela la navegación (${mal.pedidos.length})`);
+  check((await estado.innerText()).includes(wechatId), `[${etiqueta}] el aviso muestra el ID si no copia`);
+  const abrir = estado.getByRole('link', { name: p.wechatOpen, exact: true });
+  const cajaAbrir = await abrir.boundingBox();
+  check(await abrir.isVisible() && cajaAbrir.height >= 48, `[${etiqueta}] «${p.wechatOpen}» visible y tocable (${cajaAbrir && Math.round(cajaAbrir.height)} px)`);
+  await mal.page.waitForTimeout(1500);
+  check(await abrir.isVisible(), `[${etiqueta}] el aviso sigue visible hasta cerrarlo`);
+  await abrir.tap();
+  await mal.page.waitForTimeout(300);
+  check(mal.pedidos.length === 1 && (await estado.innerText()) === '', `[${etiqueta}] «${p.wechatOpen}» abre weixin:// y cierra el aviso`);
+  await mal.ctx.close();
+
+  const cierra = await abre(true);
+  await cierra.page.locator('#wechat-status .wechat-close').tap();
+  check((await cierra.page.locator('#wechat-status').innerText()) === '' && cierra.pedidos.length === 0, `[${etiqueta}] el botón de cierre quita el aviso`);
+  await cierra.ctx.close();
+}
+
 async function pagina(browser, p, vp, { sinFuentes = false } = {}) {
   const etiqueta = `${p.dir || '/'} ${vp.nombre}${sinFuentes ? ' sin-fuentes' : ''}`;
   const ctx = await nuevoContexto(browser, { vp, locale: 'en-US' });
@@ -140,7 +184,7 @@ async function pagina(browser, p, vp, { sinFuentes = false } = {}) {
   // el texto de cada pieza (Range) contra el borde derecho de .gutter. kicker y hl van sin cortes de línea.
   const bordes = await page.evaluate(() => {
     const borde = document.querySelector('.gutter').getBoundingClientRect().right;
-    return ['.kicker', '.hl', '.btn-primary', '.demo .btn'].map((sel) => {
+    return ['.kicker', '.hl', '.btn-primary', '.demo .btn', '.circles li:last-child', 'a[data-wechat]'].map((sel) => {
       const el = document.querySelector(sel);
       const rango = document.createRange();
       rango.selectNodeContents(el);
@@ -156,13 +200,19 @@ async function pagina(browser, p, vp, { sinFuentes = false } = {}) {
   check(!!caja && caja.y >= 0 && caja.y + caja.height <= vp.height,
     `[${etiqueta}] «${p.save}» visible sin scroll (y=${caja && Math.round(caja.y)}, viewport=${vp.height})`);
 
-  for (const nombre of ['WhatsApp', p.call, p.mail, 'LinkedIn']) {
+  for (const nombre of ['WhatsApp', p.call, p.mail, 'LinkedIn', p.wechatAria.replace('{id}', wechatId)]) {
     const a = page.getByRole('link', { name: nombre, exact: true });
     const b = await a.boundingBox();
     check(!!b && b.width >= 48 && b.height >= 48, `[${etiqueta}] «${nombre}» >= 48x48 (${b && Math.round(b.width)}x${b && Math.round(b.height)})`);
     const corte = await a.evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
     check(corte.sw <= corte.cw, `[${etiqueta}] «${nombre}» sin texto cortado`);
   }
+
+  // WeChat: botón ancho del mismo alto que WhatsApp solo en /zh/; en las demás, círculo de 56 px.
+  const wc = await page.locator('a[data-wechat]').boundingBox();
+  const wa = await page.getByRole('link', { name: 'WhatsApp', exact: true }).boundingBox();
+  if (p.wechatWide) check(Math.abs(wc.height - wa.height) < 0.5 && wc.width > 200, `[${etiqueta}] botón de WeChat ancho y del alto de WhatsApp (${Math.round(wc.width)}x${wc.height} vs ${wa.height})`);
+  else check(Math.round(wc.width) === 56 && Math.round(wc.height) === 56, `[${etiqueta}] círculo de WeChat de 56 px (${Math.round(wc.width)}x${Math.round(wc.height)})`);
 
   const fondo = await page.evaluate(() => getComputedStyle(document.querySelector('.nodes')).backgroundImage);
   check(fondo.includes('nodos.webp'), `[${etiqueta}] fondo con nodos.webp`);
@@ -208,6 +258,7 @@ const browser = await chromium.launch();
 try {
   await redireccion(browser);
   await recuerdo(browser);
+  for (const p of PAGINAS.filter((x) => x.code === 'en' || x.code === 'zh')) await wechat(browser, p);
   for (const vp of VIEWPORTS) {
     for (const p of PAGINAS) await pagina(browser, p, vp);
     for (const p of PAGINAS.filter((x) => x.code === 'en' || x.code === 'zh')) await pagina(browser, p, vp, { sinFuentes: true });

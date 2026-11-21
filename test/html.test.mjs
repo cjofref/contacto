@@ -4,7 +4,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const raiz = new URL('../', import.meta.url).pathname;
-const { site, locales } = JSON.parse(readFileSync(join(raiz, 'i18n/strings.json'), 'utf8'));
+const { site, wechatId, locales } = JSON.parse(readFileSync(join(raiz, 'i18n/strings.json'), 'utf8'));
 const PAGINAS = Object.entries(locales).map(([hreflang, l]) => ({
   hreflang,
   ...l,
@@ -21,7 +21,7 @@ function resuelve(rutaPagina, ref) {
 
 const refsLocales = (html) => [...html.matchAll(/\b(?:href|src)="([^"]+)"/g)]
   .map((m) => m[1].replace(/&amp;/g, '&'))
-  .filter((r) => !/^(https?:|tel:|mailto:|#|data:)/.test(r));
+  .filter((r) => !/^(https?:|tel:|mailto:|weixin:|#|data:)/.test(r));
 
 const anclas = (html) => [...html.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
 
@@ -63,6 +63,38 @@ for (const p of PAGINAS) {
     const wa = `https://wa.me/56931929011?text=${encodeURIComponent(p.wa)}`;
     assert.ok(a.some((t) => t.includes(`href="${wa}"`)), `WhatsApp sin el mensaje de ${p.hreflang}`);
     assert.ok(a.some((t) => t.includes(`href="${PIPEDRIVE}"`) && t.includes('target="_blank"') && t.includes('rel="noopener"')), 'falta la demo con target y rel');
+  });
+
+  test(`[${p.ruta}] el mensaje de WhatsApp trae el idioma de la página y el español`, () => {
+    const ES = 'Hola Cristóbal, escaneé tu tarjeta';
+    const href = anclas(p.html).map((t) => t.match(/href="(https:\/\/wa\.me\/[^"]+)"/)?.[1]).find(Boolean);
+    assert.ok(href, 'falta el enlace de WhatsApp');
+    const texto = decodeURIComponent(new URL(href.replace(/&amp;/g, '&')).searchParams.get('text'));
+    assert.ok(texto.includes(ES), `sin el español: ${texto}`);
+    if (p.hreflang === 'es') assert.equal(texto, ES, 'en es va solo el español');
+    else assert.ok(texto.startsWith(p.wa.split(' / ')[0]) && texto.endsWith(` / ${ES}`), `sin el idioma de la página: ${texto}`);
+    assert.equal(/Hi Cristobal/.test(texto), p.hreflang === 'en', 'el inglés solo en la página en inglés');
+  });
+
+  test(`[${p.ruta}] WeChat con weixin://: botón ancho solo en zh, círculo en las demás`, () => {
+    const wechat = anclas(p.html).filter((t) => t.includes('data-wechat'));
+    assert.equal(wechat.length, 1, 'un solo enlace de WeChat por página');
+    assert.match(wechat[0], /href="weixin:\/\/"/);
+    assert.ok(wechat[0].includes(`aria-label="${p.wechatAria.replace('{id}', wechatId)}"`), 'aria-label con el ID');
+    const ancho = p.hreflang === 'zh-Hans';
+    assert.equal(/class="btn btn-wa btn-wechat"/.test(wechat[0]), ancho);
+    assert.equal(/class="circle"/.test(wechat[0]), !ancho);
+    const orden = ['contacto.vcf', 'btn-wechat', 'https://wa.me/'].map((k) => p.html.indexOf(k));
+    if (ancho) {
+      assert.ok(orden[0] < orden[1] && orden[1] < orden[2], 'WeChat va después de Guardar contacto y antes de WhatsApp');
+      assert.match(p.html, new RegExp(`<span aria-hidden="true">${p.wechat} · ${wechatId}</span>`), 'ID a la vista');
+    } else {
+      assert.equal(orden[1], -1);
+      const circulos = p.html.match(/<ul class="circles">[\s\S]*?<\/ul>/)[0];
+      assert.equal((circulos.match(/class="circle"/g) || []).length, 4);
+      assert.ok(circulos.lastIndexOf('weixin://') > circulos.lastIndexOf('linkedin'), 'WeChat es el cuarto círculo');
+    }
+    assert.match(p.html, /<p class="wechat-status" id="wechat-status" role="status"[^>]*><\/p>/, 'contenedor de estado vacío en el DOM');
   });
 
   test(`[${p.ruta}] sin teléfono ni correo como texto visible`, () => {

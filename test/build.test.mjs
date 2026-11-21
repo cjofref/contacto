@@ -72,3 +72,28 @@ test('el script se ejecuta igual si se invoca por una ruta con symlink', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('wechatWide llena el botón ancho y wechatCircle el círculo, nunca ambos; {id} sale de wechatId', () => {
+  const strings = JSON.parse(readFileSync(join(raiz, 'i18n/strings.json'), 'utf8'));
+  strings.wechatId = 'abc"<9';
+  const paginas = buildPages({ strings });
+  for (const [ruta, html] of paginas) {
+    const ancho = ruta === 'zh/index.html';
+    assert.equal(html.includes('btn-wechat'), ancho, `${ruta}: botón ancho`);
+    assert.equal((html.match(/<li><a class="circle" href="weixin:\/\//g) || []).length, ancho ? 0 : 1, `${ruta}: círculo`);
+    assert.doesNotMatch(html, /\{id\}|\{\{wechat/, `${ruta}: marcador sin sustituir`);
+    assert.match(html, /abc&quot;&lt;9/, `${ruta}: ID escapado`);
+    assert.doesNotMatch(html, /abc"<9/);
+  }
+  assert.match(paginas.get('index.html'), /data-copied="WeChat ID copied: abc&quot;&lt;9"/);
+  assert.match(paginas.get('zh/index.html'), /data-copied="已复制微信号：abc&quot;&lt;9"/);
+});
+
+test('sin wechatId o sin la etiqueta del idioma el generador falla', () => {
+  const strings = JSON.parse(readFileSync(join(raiz, 'i18n/strings.json'), 'utf8'));
+  const sin = structuredClone(strings);
+  delete sin.wechatId;
+  assert.throws(() => buildPages({ strings: sin }), /wechatId/);
+  delete strings.locales['pt-BR'].wechatOpen;
+  assert.throws(() => buildPages({ strings }), /\{\{wechatOpen\}\}/);
+});

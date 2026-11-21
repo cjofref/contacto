@@ -41,11 +41,14 @@ function scriptRaiz(destinos) {
 `;
 }
 
+const WECHAT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 4C5.4 4 2 6.7 2 10.2c0 2 1.1 3.7 2.8 4.8L4 18l3.1-1.6c.8.2 1.6.3 2.4.3"/><path d="M22 14.5c0-2.8-2.7-5-6-5s-6 2.2-6 5 2.7 5 6 5c.7 0 1.4-.1 2-.3l3 .8-.9-2.6c1.1-.9 1.9-2 1.9-2.9z"/></svg>';
+
 export function buildPages({
   strings = JSON.parse(readFileSync(join(RAIZ, 'i18n/strings.json'), 'utf8')),
   template = readFileSync(join(RAIZ, 'templates/page.html'), 'utf8'),
 } = {}) {
-  const { site, locales } = strings;
+  const { site, wechatId, locales } = strings;
+  if (!wechatId) throw new Error('strings.json: falta wechatId');
   const lista = Object.entries(locales).map(([hreflang, l]) => ({ hreflang, ...l }));
   const destinos = Object.fromEntries(lista.map((l) => [l.code, l.dir]));
   const paginas = new Map();
@@ -64,11 +67,26 @@ export function buildPages({
       return `          <li><a href="${esc(hrefDe(l))}" hreflang="${esc(l.hreflang)}" lang="${esc(l.htmlLang)}" data-lang="${esc(l.code)}"${actualAttr}><span class="fl" aria-hidden="true">${esc(l.flag)}</span><span>${esc(l.name)}</span></a></li>\n`;
     }).join('');
 
+    // WeChat: botón ancho solo donde wechatWide (zh-Hans); en las demás, cuarto círculo. {id} sale de wechatId.
+    const conId = (t) => String(t).replaceAll('{id}', wechatId);
+    const ancho = actual.wechatWide === true;
+    const wechatWide = ancho
+      ? `        <a class="btn btn-wa btn-wechat" href="weixin://" data-wechat aria-label="${esc(conId(actual.wechatAria))}">\n          ${WECHAT_SVG}\n          <span aria-hidden="true">${esc(actual.wechat)} · ${esc(wechatId)}</span>\n        </a>\n`
+      : '';
+    const wechatCircle = ancho
+      ? ''
+      : `          <li><a class="circle" href="weixin://" data-wechat aria-label="${esc(conId(actual.wechatAria))}">${WECHAT_SVG}</a></li>\n`;
+
     const vars = {
       ...Object.fromEntries(Object.entries(actual).map(([k, v]) => [k, esc(v)])),
       base,
       site,
       pageUrl: `${site}${actual.dir}`,
+      wechatWide,
+      wechatCircle,
+      wechatId: esc(wechatId),
+      wechatCopied: esc(conId(actual.wechatCopied)),
+      wechatManual: esc(conId(actual.wechatManual)),
       waText: esc(encodeURIComponent(actual.wa)),
       hreflang,
       langMenu,

@@ -391,3 +391,9 @@ footer .t {
 :lang(zh) .eyebrow,
 :lang(zh) .modules h3,
 :lang(zh) .demo p { letter-spacing: 0.04em; }
+
+/* WeChat: aviso al copiar el ID (vacío = sin espacio) y botón de cierre. */
+.wechat-status { margin: 0; font-size: 14px; line-height: 1.4; text-align: center; color: var(--mo-text-soft); }
+.wechat-status:not(:empty) { margin-top: 12px; }
+.wechat-open { margin-inline-start: 10px; color: var(--mo-teal); font-weight: 700; display: inline-flex; align-items: center; min-height: 48px; margin-block: -14px; vertical-align: middle; }
+.wechat-close { margin-inline-start: 6px; min-width: 48px; min-height: 48px; margin-block: -14px; border: 0; background: none; color: var(--mo-white); font: inherit; font-size: 20px; cursor: pointer; vertical-align: middle; }
