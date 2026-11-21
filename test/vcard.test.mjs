@@ -29,7 +29,7 @@ const leer = (ruta) => readFileSync(new URL(`../${ruta}`, import.meta.url), 'utf
 const desplegar = (t) => t.replace(/\r\n[ \t]/g, '');
 const tieneWechat = (t) => t.includes('weixin://');
 
-test('contacto.vcf trae el ID de WeChat y el perfil de LinkedIn, sin zona horaria', () => {
+test('contacto.vcf trae el ID de WeChat y LinkedIn solo como perfil social, sin zona horaria', () => {
   const t = leer('contacto.vcf');
   const logico = desplegar(t);
   assert.ok(logico.includes('\r\nitem1.URL:weixin://dl/chat?cjofre13\r\n'));
@@ -40,6 +40,8 @@ test('contacto.vcf trae el ID de WeChat y el perfil de LinkedIn, sin zona horari
     ),
   );
   assert.ok(!/^TZ[;:]/m.test(t));
+  assert.ok(!logico.includes('\r\nURL:https://www.linkedin.com'));
+  assert.ok(logico.includes('\r\nURL:https://www.monitorone.com\r\n'));
 });
 
 test('contacto.vcf mantiene CRLF y líneas físicas de 75 octetos o menos', () => {
