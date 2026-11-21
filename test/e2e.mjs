@@ -78,6 +78,32 @@ async function redireccion(browser) {
   const final = await abreRaiz(page);
   check(final === urlDe('fr/'), `[de-DE, fr-FR] gana el primero soportado → /fr/ (${final})`);
   await ctx.close();
+
+  // R-12: ?lang= soportado se acepta y se recuerda.
+  const ctxFr = await nuevoContexto(browser, { locale: 'en-US' });
+  const pageFr = await ctxFr.newPage();
+  const conQuery = await abreRaiz(pageFr, urlDe('?lang=fr'));
+  check(conQuery === urlDe('fr/'), `[en-US ?lang=fr] raíz → /fr/ (${conQuery})`);
+  const vuelta = await abreRaiz(pageFr);
+  check(vuelta === urlDe('fr/'), `[en-US ?lang=fr] al volver a / recuerda /fr/ (${vuelta})`);
+  await ctxFr.close();
+
+  // R-12: ?lang= no soportado se ignora (ni redirige ni se guarda) y decide el navegador.
+  const ctxDe = await nuevoContexto(browser, { locale: 'es-CL' });
+  const pageDe = await ctxDe.newPage();
+  const ignorado = await abreRaiz(pageDe, urlDe('?lang=de'));
+  check(ignorado === urlDe('es/'), `[es-CL ?lang=de] se ignora y sigue al navegador → /es/ (${ignorado})`);
+  const guardado = await pageDe.evaluate(() => localStorage.getItem('contacto.lang'));
+  check(guardado === null, `[es-CL ?lang=de] no se guarda (${guardado})`);
+  await ctxDe.close();
+
+  // R-12: un valor guardado inválido se descarta y decide el navegador.
+  const ctxMal = await nuevoContexto(browser, { locale: 'es-CL' });
+  await ctxMal.addInitScript(() => { try { localStorage.setItem('contacto.lang', 'xx'); } catch (e) { /* sin almacenamiento */ } });
+  const pageMal = await ctxMal.newPage();
+  const invalido = await abreRaiz(pageMal);
+  check(invalido === urlDe('es/'), `[es-CL guardado=xx] se descarta → /es/ (${invalido})`);
+  await ctxMal.close();
 }
 
 // S-10: elegir English desde /es/ se recuerda y la raíz no devuelve a /es/.
@@ -109,6 +135,21 @@ async function pagina(browser, p, vp, { sinFuentes = false } = {}) {
 
   const scroll = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
   check(scroll.sw <= scroll.cw, `[${etiqueta}] sin scroll horizontal (${scroll.sw} <= ${scroll.cw})`);
+
+  // .card-page recorta con overflow: hidden, así que un desborde no suma a scrollWidth: se mide
+  // el texto de cada pieza (Range) contra el borde derecho de .gutter. kicker y hl van sin cortes de línea.
+  const bordes = await page.evaluate(() => {
+    const borde = document.querySelector('.gutter').getBoundingClientRect().right;
+    return ['.kicker', '.hl', '.btn-primary', '.demo .btn'].map((sel) => {
+      const el = document.querySelector(sel);
+      const rango = document.createRange();
+      rango.selectNodeContents(el);
+      return { sel, borde, right: Math.max(el.getBoundingClientRect().right, rango.getBoundingClientRect().right) };
+    });
+  });
+  for (const b of bordes) {
+    check(b.right <= b.borde + 0.5, `[${etiqueta}] ${b.sel} dentro de .gutter (${Math.round(b.right)} <= ${Math.round(b.borde)})`);
+  }
 
   const guardar = page.getByRole('link', { name: p.save, exact: true });
   const caja = await guardar.boundingBox();

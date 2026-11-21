@@ -89,10 +89,19 @@ for (const p of PAGINAS) {
 
   test(`[${p.ruta}] solo la raíz redirige; todas recuerdan el idioma`, () => {
     assert.equal(/location\.replace/.test(p.html), p.dir === '', 'location.replace solo en la raíz');
-    assert.match(p.html, /localStorage\.setItem\('lang'/);
+    assert.match(p.html, /localStorage\.setItem\('contacto\.lang'/);
+    assert.doesNotMatch(p.html, /localStorage\.(?:get|set)Item\('lang'/, 'la clave genérica lang se comparte con otros sitios del origen');
     assert.match(p.html, /try\s*\{\s*localStorage/);
   });
 }
+
+test('Google Fonts en todas las páginas salvo zh-Hans, que usa la pila del sistema', () => {
+  for (const p of PAGINAS) {
+    const conFuentes = p.hreflang !== 'zh-Hans';
+    assert.equal(/fonts\.googleapis\.com/.test(p.html), conFuentes, `${p.ruta}: fonts.googleapis.com`);
+    assert.equal(/fonts\.gstatic\.com/.test(p.html), conFuentes, `${p.ruta}: fonts.gstatic.com`);
+  }
+});
 
 function pesoDir(dir) {
   let total = 0;
