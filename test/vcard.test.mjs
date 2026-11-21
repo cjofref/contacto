@@ -54,3 +54,22 @@ test('un vCard sin la línea de WeChat no cumple la prueba', () => {
   assert.ok(tieneWechat(leer('contacto.vcf')));
   assert.ok(!tieneWechat(leer('test/fixtures/sin-wechat.vcf')));
 });
+
+test('contacto.vcf trae la foto: bytes idénticos a assets/vcard-photo.png, CRLF y menos de 30 KB', () => {
+  const t = leer('contacto.vcf');
+  const logico = desplegar(t);
+  const m = logico.match(/\r\nPHOTO;ENCODING=b;TYPE=PNG:([A-Za-z0-9+/=]+)\r\nEND:VCARD\r\n/);
+  assert.ok(m, 'falta PHOTO justo antes de END:VCARD');
+  const bytes = Buffer.from(m[1], 'base64');
+  assert.deepEqual(bytes.subarray(0, 8), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  assert.ok(bytes.equals(readFileSync(new URL('../assets/vcard-photo.png', import.meta.url))));
+  assert.ok(!/^LOGO[;:]/m.test(t));
+  assert.ok(Buffer.byteLength(t, 'utf8') < 30 * 1024);
+});
+
+test('embed-vcard-photo es idempotente: una segunda corrida no cambia el archivo', () => {
+  const antes = leer('contacto.vcf');
+  const r = spawnSync(process.execPath, ['scripts/embed-vcard-photo.mjs'], { cwd: raiz, encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(leer('contacto.vcf'), antes);
+});
