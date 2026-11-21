@@ -20,9 +20,6 @@
   <meta property="og:description" content="MonitorOne 总经理。保存我的联系方式，了解 Real Time Growth Management。">
   <meta property="og:url" content="https://cjofref.github.io/contacto/zh/">
   <meta property="og:image" content="https://cjofref.github.io/contacto/assets/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@600;700;800&display=swap">
   <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
@@ -104,7 +101,7 @@
 document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a[data-lang]');
   if (!a) return;
-  try { localStorage.setItem('lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
+  try { localStorage.setItem('contacto.lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
 });
 </script>
 </body>

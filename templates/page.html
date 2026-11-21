@@ -15,10 +15,7 @@
   <meta property="og:description" content="{{ogDescription}}">
   <meta property="og:url" content="{{pageUrl}}">
   <meta property="og:image" content="{{site}}assets/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@600;700;800&display=swap">
-  <link rel="stylesheet" href="{{base}}css/styles.css">
+{{fonts}}  <link rel="stylesheet" href="{{base}}css/styles.css">
 </head>
 <body>
 <div class="card-page">
@@ -94,7 +91,7 @@
 document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a[data-lang]');
   if (!a) return;
-  try { localStorage.setItem('lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
+  try { localStorage.setItem('contacto.lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
 });
 </script>
 </body>

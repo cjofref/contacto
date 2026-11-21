@@ -9,8 +9,8 @@
     var D = {"es":"es/","en":"","pt":"pt/","fr":"fr/","zh":"zh/"};
     var ok = function (c) { return Object.prototype.hasOwnProperty.call(D, c); };
     var l = (new URLSearchParams(location.search).get('lang') || '').toLowerCase().slice(0, 2);
-    if (ok(l)) { try { localStorage.setItem('lang', l); } catch (e) { /* sin almacenamiento */ } }
-    else { l = ''; try { l = localStorage.getItem('lang') || ''; } catch (e) { /* sin almacenamiento */ } }
+    if (ok(l)) { try { localStorage.setItem('contacto.lang', l); } catch (e) { /* sin almacenamiento */ } }
+    else { l = ''; try { l = localStorage.getItem('contacto.lang') || ''; } catch (e) { /* sin almacenamiento */ } }
     if (!ok(l)) {
       l = 'en';
       var L = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
@@ -119,7 +119,7 @@
 document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a[data-lang]');
   if (!a) return;
-  try { localStorage.setItem('lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
+  try { localStorage.setItem('contacto.lang', a.getAttribute('data-lang')); } catch (x) { /* almacenamiento bloqueado: solo se pierde el recuerdo */ }
 });
 </script>
 </body>
