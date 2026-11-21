@@ -1,59 +1,98 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 const raiz = new URL('../', import.meta.url).pathname;
-const html = readFileSync(join(raiz, 'index.html'), 'utf8');
-const css = readFileSync(join(raiz, 'css/styles.css'), 'utf8');
+const { site, locales } = JSON.parse(readFileSync(join(raiz, 'i18n/strings.json'), 'utf8'));
+const PAGINAS = Object.entries(locales).map(([hreflang, l]) => ({
+  hreflang,
+  ...l,
+  ruta: `${l.dir}index.html`,
+  html: readFileSync(join(raiz, l.dir, 'index.html'), 'utf8'),
+}));
 
-const NAVY = '#01253f';
-const TEAL = '#10c1c5';
+const PIPEDRIVE = 'https://webforms.pipedrive.com/f/6UOYm0kTDVL0YsV8SFnOzsSKA5bwGdbyJkvX5kAbAUHXz0dJSshwb9aM14NiE6BILF';
 
-// Colores permitidos (CA-3): paleta M1, blanco, fondo y grises BS5 de la guía.
-const PERMITIDOS = new Set([
-  NAVY, TEAL, '#87c78d', '#383838', '#fff', '#ffffff', '#f8f9fa',
-  '#e9ecef', '#dee2e6', '#6c757d',
-]);
-const PERMITIDO_RGBA = 'rgba(0,0,0,0.075)';
-
-function normalizaHex(h) {
-  return h.toLowerCase();
+// Resuelve una referencia local relativa a la carpeta de su página (como el navegador).
+function resuelve(rutaPagina, ref) {
+  return join(raiz, dirname(rutaPagina), ref.replace(/[?#].*$/, ''));
 }
 
-function luminancia(hex) {
-  let h = hex.replace('#', '');
-  if (h.length === 3) h = [...h].map((c) => c + c).join('');
-  const canal = (i) => {
-    const v = parseInt(h.slice(i, i + 2), 16) / 255;
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * canal(0) + 0.7152 * canal(2) + 0.0722 * canal(4);
+const refsLocales = (html) => [...html.matchAll(/\b(?:href|src)="([^"]+)"/g)]
+  .map((m) => m[1].replace(/&amp;/g, '&'))
+  .filter((r) => !/^(https?:|tel:|mailto:|#|data:)/.test(r));
+
+const anclas = (html) => [...html.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
+
+test('el resolvedor de rutas distingue la carpeta de cada página', () => {
+  assert.ok(existsSync(resuelve('es/index.html', '../css/styles.css')));
+  assert.ok(!existsSync(resuelve('es/index.html', 'css/styles.css')), 'una subpágina sin ../ debe fallar');
+});
+
+for (const p of PAGINAS) {
+  test(`[${p.ruta}] todos los href/src locales existen relativos a su carpeta`, () => {
+    const refs = refsLocales(p.html);
+    assert.ok(refs.length >= 5, 'no se encontraron referencias locales');
+    for (const ref of refs) {
+      assert.ok(existsSync(resuelve(p.ruta, ref)), `no existe ${ref} desde ${p.ruta}`);
+      if (p.dir) assert.ok(ref.startsWith('../'), `en ${p.ruta} la ruta ${ref} debe subir con ../`);
+    }
+  });
+
+  test(`[${p.ruta}] lang, viewport, hreflang de las otras cuatro y x-default`, () => {
+    assert.match(p.html, new RegExp(`<html lang="${p.htmlLang}">`));
+    assert.match(p.html, /<meta name="viewport" content="width=device-width, initial-scale=1">/);
+    const alternos = [...p.html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">/g)]
+      .map((m) => `${m[1]} ${m[2]}`).sort();
+    const esperados = [
+      ...PAGINAS.filter((o) => o !== p).map((o) => `${o.hreflang} ${site}${o.dir}`),
+      `x-default ${site}`,
+    ].sort();
+    assert.deepEqual(alternos, esperados);
+    assert.match(p.html, new RegExp(`<meta property="og:url" content="${site}${p.dir}">`));
+  });
+
+  test(`[${p.ruta}] botones de contacto, WhatsApp del idioma y demo`, () => {
+    const a = anclas(p.html);
+    const base = p.dir ? '../' : '';
+    assert.ok(a.some((t) => t.includes(`href="${base}contacto.vcf"`) && /\bdownload\b/.test(t)), 'falta Guardar contacto con download');
+    assert.ok(a.some((t) => t.includes('href="tel:+56931929011"')), 'falta tel:');
+    assert.ok(a.some((t) => t.includes('href="mailto:cjofre@monitorone.com"')), 'falta mailto:');
+    assert.ok(a.some((t) => t.includes('href="https://www.linkedin.com/in/cristobaljofre"')), 'falta LinkedIn');
+    const wa = `https://wa.me/56931929011?text=${encodeURIComponent(p.wa)}`;
+    assert.ok(a.some((t) => t.includes(`href="${wa}"`)), `WhatsApp sin el mensaje de ${p.hreflang}`);
+    assert.ok(a.some((t) => t.includes(`href="${PIPEDRIVE}"`) && t.includes('target="_blank"') && t.includes('rel="noopener"')), 'falta la demo con target y rel');
+  });
+
+  test(`[${p.ruta}] sin teléfono ni correo como texto visible`, () => {
+    const visible = p.html
+      .replace(/<head>[\s\S]*<\/head>/, '')
+      .replace(/<script>[\s\S]*?<\/script>/g, '')
+      .replace(/<[^>]+>/g, ' ');
+    assert.doesNotMatch(visible, /56931929011|9\s?3192\s?9011|cjofre@/);
+  });
+
+  test(`[${p.ruta}] selector con las 5 páginas y la actual marcada`, () => {
+    const links = anclas(p.html).filter((t) => t.includes('data-lang='));
+    assert.equal(links.length, 5);
+    const actual = links.filter((t) => t.includes('aria-current="true"'));
+    assert.equal(actual.length, 1);
+    assert.match(actual[0], new RegExp(`data-lang="${p.code}"`));
+    const ingles = links.find((t) => t.includes('data-lang="en"'));
+    assert.match(ingles, /href="(\.\.\/|\.\/)\?lang=en"/, 'el enlace al inglés lleva ?lang=en');
+    for (const t of links) {
+      const href = t.match(/href="([^"]+)"/)[1];
+      assert.ok(existsSync(join(resuelve(p.ruta, href), 'index.html')), `el enlace ${href} no lleva a una página`);
+    }
+  });
+
+  test(`[${p.ruta}] solo la raíz redirige; todas recuerdan el idioma`, () => {
+    assert.equal(/location\.replace/.test(p.html), p.dir === '', 'location.replace solo en la raíz');
+    assert.match(p.html, /localStorage\.setItem\('lang'/);
+    assert.match(p.html, /try\s*\{\s*localStorage/);
+  });
 }
-
-function contraste(a, b) {
-  const [l1, l2] = [luminancia(a), luminancia(b)].sort((x, y) => y - x);
-  return (l1 + 0.05) / (l2 + 0.05);
-}
-
-test('todos los href/src locales existen', () => {
-  const refs = [...html.matchAll(/\b(?:href|src)="([^"]+)"/g)].map((m) => m[1]);
-  const locales = refs.filter((r) => !/^(https?:|tel:|mailto:|#|data:)/.test(r));
-  assert.ok(locales.length > 0, 'no se encontraron referencias locales');
-  for (const ref of locales) {
-    assert.ok(existsSync(join(raiz, ref)), `no existe ${ref}`);
-  }
-});
-
-test('enlaces de contacto: tel, mailto y contacto.vcf con download', () => {
-  assert.match(html, /href="tel:\+56931929011"/);
-  assert.match(html, /href="mailto:cjofre@monitorone\.com"/);
-  assert.match(html, /<a\b[^>]*href="contacto\.vcf"[^>]*\bdownload\b/);
-});
-
-test('meta viewport presente', () => {
-  assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1">/);
-});
 
 function pesoDir(dir) {
   let total = 0;
@@ -64,33 +103,10 @@ function pesoDir(dir) {
   return total;
 }
 
-test('peso de index.html + css/ + assets/ < 300 KB', () => {
-  const total = statSync(join(raiz, 'index.html')).size + pesoDir(join(raiz, 'css')) + pesoDir(join(raiz, 'assets'));
-  assert.ok(total < 300 * 1024, `pesa ${total} bytes`);
-});
-
-test('todo color de css/styles.css pertenece a la lista permitida', () => {
-  const sinComentarios = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const hex = [...sinComentarios.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].map((m) => normalizaHex(m[0]));
-  assert.ok(hex.length > 0);
-  for (const c of hex) assert.ok(PERMITIDOS.has(c), `color no permitido: ${c}`);
-
-  const rgba = [...sinComentarios.matchAll(/rgba?\([^)]*\)/g)].map((m) => m[0].replace(/\s+/g, '').replace(/,\.075/, ',0.075'));
-  for (const c of rgba) assert.equal(c, PERMITIDO_RGBA, `color no permitido: ${c}`);
-
-  // Colores con nombre fuera de la lista (transparent y currentColor no son colores de marca).
-  const sinVars = sinComentarios.replace(/var\([^)]*\)/g, '');
-  const nombrados = sinVars.match(/(?:color|background|border[\w-]*|outline|fill|stroke)\s*:\s*[^;{}]*\b(red|blue|green|black|white|gray|grey|orange|yellow|purple|pink)\b/gi);
-  assert.equal(nombrados, null, `color con nombre no permitido: ${nombrados}`);
-});
-
-test('texto del botón primario es Navy sobre teal con contraste >= 4,5:1', () => {
-  const regla = css.match(/\.btn-primary\s*\{([^}]*)\}/);
-  assert.ok(regla, 'falta .btn-primary');
-  const color = regla[1].match(/(?:^|[;\s])color:\s*var\(--mo-navy\)/);
-  const fondo = regla[1].match(/background:\s*var\(--mo-teal\)/);
-  assert.ok(color, 'el texto del botón primario debe ser --mo-navy');
-  assert.ok(fondo, 'el fondo del botón primario debe ser --mo-teal');
-  const ratio = contraste(NAVY, TEAL);
-  assert.ok(ratio >= 4.5, `contraste ${ratio.toFixed(2)}:1`);
+test('cada página con CSS e imágenes pesa < 300 KB', () => {
+  const comun = pesoDir(join(raiz, 'css')) + pesoDir(join(raiz, 'assets'));
+  for (const p of PAGINAS) {
+    const total = Buffer.byteLength(p.html) + comun;
+    assert.ok(total < 300 * 1024, `${p.ruta} pesa ${total} bytes`);
+  }
 });

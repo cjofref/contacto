@@ -1,5 +1,5 @@
 // E2E móvil con Playwright. Uso: BASE_URL=http://localhost:8000/ node test/e2e.mjs
-// Corre en serie (un navegador, un viewport a la vez) para cuidar la RAM.
+// Corre en serie (un navegador, un contexto a la vez) para cuidar la RAM.
 import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -11,16 +11,19 @@ if (process.env.NODE_TEST_CONTEXT) {
   process.exit(0);
 }
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:8000/';
+const BASE_URL = new URL(process.env.BASE_URL || 'http://localhost:8000/');
 const ARTIFACTS = new URL('./artifacts/', import.meta.url).pathname;
 const VCF_LOCAL = readFileSync(new URL('../contacto.vcf', import.meta.url));
+const { locales } = JSON.parse(readFileSync(new URL('../i18n/strings.json', import.meta.url), 'utf8'));
+const PAGINAS = Object.values(locales);
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
+const urlDe = (dir) => new URL(dir, BASE_URL).href;
+const sinQuery = (u) => { const x = new URL(u); return x.origin + x.pathname; };
 
 const VIEWPORTS = [
   { nombre: '390x844', width: 390, height: 844 },
   { nombre: '360x640', width: 360, height: 640 },
 ];
-const ACCIONES = ['Llamar', 'WhatsApp', 'Email', 'LinkedIn'];
 
 mkdirSync(ARTIFACTS, { recursive: true });
 
@@ -30,79 +33,143 @@ const check = (ok, mensaje) => {
   if (!ok) fallos.push(mensaje);
 };
 
-async function corrida(browser, vp, { sinFuentes }) {
-  const etiqueta = `${vp.nombre}${sinFuentes ? ' sin-fuentes' : ''}`;
-  const context = await browser.newContext({
-    viewport: { width: vp.width, height: vp.height },
-    deviceScaleFactor: 1,
-    isMobile: true,
-    hasTouch: true,
-    acceptDownloads: true,
-  });
-  const page = await context.newPage();
-  if (sinFuentes) {
-    await page.route(/https?:\/\/fonts\.(googleapis|gstatic)\.com\/.*/, (route) => route.abort());
+const nuevoContexto = (browser, { vp = VIEWPORTS[0], locale = 'en-US', idiomas } = {}) => browser.newContext({
+  viewport: { width: vp.width, height: vp.height },
+  deviceScaleFactor: 1,
+  isMobile: true,
+  hasTouch: true,
+  acceptDownloads: true,
+  locale,
+}).then(async (ctx) => {
+  if (idiomas) {
+    await ctx.addInitScript((lista) => {
+      Object.defineProperty(Navigator.prototype, 'languages', { get: () => lista });
+      Object.defineProperty(Navigator.prototype, 'language', { get: () => lista[0] });
+    }, idiomas);
   }
-  await page.goto(BASE_URL, { waitUntil: 'load' });
-  // Deja que el layout se estabilice (swap de fuentes) antes de medir.
+  return ctx;
+});
+
+// Abre la raíz y espera a que termine la redirección (si la hay).
+async function abreRaiz(page, url = BASE_URL.href) {
+  await page.goto(url, { waitUntil: 'commit' });
+  await page.waitForLoadState('load');
+  await page.waitForTimeout(400);
+  await page.waitForLoadState('load');
+  return sinQuery(page.url());
+}
+
+// S-10: redirección por idioma desde la raíz.
+async function redireccion(browser) {
+  const casos = [
+    ['es-CL', 'es/'], ['en-US', ''], ['pt-BR', 'pt/'], ['fr-FR', 'fr/'],
+    ['zh-CN', 'zh/'], ['zh-TW', 'zh/'], ['de-DE', ''], ['ja-JP', ''], ['it-IT', ''],
+  ];
+  for (const [locale, dir] of casos) {
+    const ctx = await nuevoContexto(browser, { locale });
+    const page = await ctx.newPage();
+    const final = await abreRaiz(page);
+    check(final === urlDe(dir), `[${locale}] raíz → /${dir} (${final})`);
+    await ctx.close();
+  }
+
+  const ctx = await nuevoContexto(browser, { locale: 'de-DE', idiomas: ['de-DE', 'fr-FR'] });
+  const page = await ctx.newPage();
+  const final = await abreRaiz(page);
+  check(final === urlDe('fr/'), `[de-DE, fr-FR] gana el primero soportado → /fr/ (${final})`);
+  await ctx.close();
+}
+
+// S-10: elegir English desde /es/ se recuerda y la raíz no devuelve a /es/.
+async function recuerdo(browser) {
+  const ctx = await nuevoContexto(browser, { locale: 'es-CL' });
+  const page = await ctx.newPage();
+  check((await abreRaiz(page)) === urlDe('es/'), '[recuerdo] es-CL entra a /es/');
+  await page.locator('.lang summary').click();
+  const ingles = page.locator('.lang .menu a[data-lang="en"]');
+  check(await ingles.isVisible(), '[recuerdo] el desplegable se abre y muestra English');
+  await Promise.all([page.waitForURL((u) => sinQuery(u.href) === BASE_URL.href), ingles.click()]);
+  await page.waitForTimeout(400);
+  check(sinQuery(page.url()) === BASE_URL.href, `[recuerdo] tras elegir English queda en la raíz (${page.url()})`);
+  const recargada = await abreRaiz(page);
+  check(recargada === BASE_URL.href, `[recuerdo] al recargar / se queda en inglés (${recargada})`);
+  check((await page.locator('html').getAttribute('lang')) === 'en', '[recuerdo] la raíz está en inglés');
+  await ctx.close();
+}
+
+async function pagina(browser, p, vp, { sinFuentes = false } = {}) {
+  const etiqueta = `${p.dir || '/'} ${vp.nombre}${sinFuentes ? ' sin-fuentes' : ''}`;
+  const ctx = await nuevoContexto(browser, { vp, locale: 'en-US' });
+  const page = await ctx.newPage();
+  if (sinFuentes) await page.route(/https?:\/\/fonts\.(googleapis|gstatic)\.com\/.*/, (r) => r.abort());
+  await page.goto(p.dir ? urlDe(p.dir) : urlDe('?lang=en'), { waitUntil: 'load' });
   await page.evaluate(() => document.fonts.ready);
 
-  // S-1 / S-4: sin scroll horizontal.
-  const scroll = await page.evaluate(() => ({
-    sw: document.documentElement.scrollWidth,
-    cw: document.documentElement.clientWidth,
-  }));
+  check((await page.locator('html').getAttribute('lang')) === p.htmlLang, `[${etiqueta}] lang=${p.htmlLang}`);
+
+  const scroll = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
   check(scroll.sw <= scroll.cw, `[${etiqueta}] sin scroll horizontal (${scroll.sw} <= ${scroll.cw})`);
 
-  // S-1: «Guardar contacto» visible sin scroll.
-  const guardar = page.getByRole('link', { name: 'Guardar contacto' });
+  const guardar = page.getByRole('link', { name: p.save, exact: true });
   const caja = await guardar.boundingBox();
-  check(
-    !!caja && caja.y >= 0 && caja.y + caja.height <= vp.height,
-    `[${etiqueta}] «Guardar contacto» visible sin scroll (y=${caja && Math.round(caja.y)}, alto=${caja && Math.round(caja.height)}, viewport=${vp.height})`,
-  );
+  check(!!caja && caja.y >= 0 && caja.y + caja.height <= vp.height,
+    `[${etiqueta}] «${p.save}» visible sin scroll (y=${caja && Math.round(caja.y)}, viewport=${vp.height})`);
 
-  // S-4: acciones tocables y sin texto cortado.
-  for (const nombre of ACCIONES) {
+  for (const nombre of ['WhatsApp', p.call, p.mail, 'LinkedIn']) {
     const a = page.getByRole('link', { name: nombre, exact: true });
     const b = await a.boundingBox();
     check(!!b && b.width >= 48 && b.height >= 48, `[${etiqueta}] «${nombre}» >= 48x48 (${b && Math.round(b.width)}x${b && Math.round(b.height)})`);
     const corte = await a.evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
-    check(corte.sw <= corte.cw, `[${etiqueta}] «${nombre}» sin texto cortado (${corte.sw} <= ${corte.cw})`);
+    check(corte.sw <= corte.cw, `[${etiqueta}] «${nombre}» sin texto cortado`);
   }
+
+  const fondo = await page.evaluate(() => getComputedStyle(document.querySelector('.nodes')).backgroundImage);
+  check(fondo.includes('nodos.webp'), `[${etiqueta}] fondo con nodos.webp`);
 
   if (sinFuentes) {
-    // S-7: texto legible con la fuente de respaldo.
-    const legible = await page.evaluate(() => {
+    // S-7: texto legible con la fuente de respaldo y Montserrat realmente sin cargar.
+    const r = await page.evaluate(() => {
       const h1 = document.querySelector('h1');
-      const estilo = getComputedStyle(h1);
       return {
-        texto: h1.textContent.trim(),
-        tamano: parseFloat(estilo.fontSize),
-        visible: h1.getBoundingClientRect().width > 0,
-        cargada: document.fonts.check('600 16px Poppins') && [...document.fonts].some((f) => f.status === 'loaded'),
+        tamano: parseFloat(getComputedStyle(h1).fontSize),
+        visible: h1.getBoundingClientRect().width > 0 && h1.textContent.trim().length > 0,
+        cargada: [...document.fonts].some((f) => f.family.includes('Montserrat') && f.status === 'loaded'),
       };
     });
-    check(legible.texto.length > 0 && legible.visible && legible.tamano >= 16, `[${etiqueta}] título legible con fuente de respaldo (${legible.tamano}px)`);
-    check(!legible.cargada, `[${etiqueta}] Google Fonts efectivamente bloqueado`);
+    check(r.visible && r.tamano >= 16, `[${etiqueta}] título legible con fuente de respaldo (${r.tamano}px)`);
+    check(!r.cargada, `[${etiqueta}] Montserrat efectivamente bloqueada`);
   } else {
+    // Desplegable: abre y cada opción es tocable.
+    await page.locator('.lang summary').click();
+    const opciones = page.locator('.lang .menu a');
+    check((await opciones.count()) === 5 && (await opciones.first().isVisible()), `[${etiqueta}] desplegable abierto con 5 idiomas`);
+    for (const caja5 of await Promise.all((await opciones.all()).map((o) => o.boundingBox()))) {
+      check(!!caja5 && caja5.height >= 48, `[${etiqueta}] opción del menú >= 48 px de alto`);
+    }
+    const resumen = await page.locator('.lang summary').boundingBox();
+    check(resumen.height >= 48 && resumen.width >= 48, `[${etiqueta}] botón del selector >= 48x48`);
+    if (vp === VIEWPORTS[0]) {
+      await page.screenshot({ path: `${ARTIFACTS}menu-${p.code}-${vp.nombre}.png` });
+    }
+    await page.locator('.lang summary').click();
+
     // S-2: la descarga entrega contacto.vcf idéntico al del repo.
     const [descarga] = await Promise.all([page.waitForEvent('download'), guardar.click()]);
-    check(descarga.suggestedFilename() === 'contacto.vcf', `[${etiqueta}] descarga se llama contacto.vcf (${descarga.suggestedFilename()})`);
-    const ruta = await descarga.path();
-    const bytes = await readFile(ruta);
-    check(sha256(bytes) === sha256(VCF_LOCAL), `[${etiqueta}] sha256 de la descarga igual al del repo`);
+    check(descarga.suggestedFilename() === 'contacto.vcf', `[${etiqueta}] descarga contacto.vcf`);
+    check(sha256(await readFile(await descarga.path())) === sha256(VCF_LOCAL), `[${etiqueta}] sha256 de la descarga igual al del repo`);
   }
 
-  await page.screenshot({ path: `${ARTIFACTS}landing-${vp.nombre}${sinFuentes ? '-sin-fuentes' : ''}.png`, fullPage: true });
-  await context.close();
+  await page.screenshot({ path: `${ARTIFACTS}landing-${p.code}-${vp.nombre}${sinFuentes ? '-sin-fuentes' : ''}.png`, fullPage: true });
+  await ctx.close();
 }
 
 const browser = await chromium.launch();
 try {
+  await redireccion(browser);
+  await recuerdo(browser);
   for (const vp of VIEWPORTS) {
-    await corrida(browser, vp, { sinFuentes: false });
-    await corrida(browser, vp, { sinFuentes: true });
+    for (const p of PAGINAS) await pagina(browser, p, vp);
+    for (const p of PAGINAS.filter((x) => x.code === 'en' || x.code === 'zh')) await pagina(browser, p, vp, { sinFuentes: true });
   }
 } finally {
   await browser.close();
