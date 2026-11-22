@@ -55,14 +55,14 @@ test('un vCard sin la línea de WeChat no cumple la prueba', () => {
   assert.ok(!tieneWechat(leer('test/fixtures/sin-wechat.vcf')));
 });
 
-test('contacto.vcf trae la foto: bytes idénticos a assets/vcard-photo.png, CRLF y menos de 30 KB', () => {
+test('contacto.vcf trae la foto: bytes idénticos a assets/vcard-photo.jpg, CRLF y menos de 30 KB', () => {
   const t = leer('contacto.vcf');
   const logico = desplegar(t);
-  const m = logico.match(/\r\nPHOTO;ENCODING=b;TYPE=PNG:([A-Za-z0-9+/=]+)\r\nEND:VCARD\r\n/);
-  assert.ok(m, 'falta PHOTO justo antes de END:VCARD');
+  const m = logico.match(/\r\nFN[^\r\n]*\r\nPHOTO;ENCODING=b;TYPE=JPEG:([A-Za-z0-9+/=]+)\r\n/);
+  assert.ok(m, 'falta PHOTO justo después de FN');
   const bytes = Buffer.from(m[1], 'base64');
-  assert.deepEqual(bytes.subarray(0, 8), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-  assert.ok(bytes.equals(readFileSync(new URL('../assets/vcard-photo.png', import.meta.url))));
+  assert.deepEqual(bytes.subarray(0, 3), Buffer.from([0xff, 0xd8, 0xff]));
+  assert.ok(bytes.equals(readFileSync(new URL('../assets/vcard-photo.jpg', import.meta.url))));
   assert.ok(!/^LOGO[;:]/m.test(t));
   assert.ok(Buffer.byteLength(t, 'utf8') < 30 * 1024);
 });
